@@ -54,35 +54,59 @@ exports.exampleFromReadme = function(test) {
     test.done();
 };
 
-exports.handRanks = function(test){
-    // Params: smallBlind, bigBlind, minPlayers, maxPlayers, minBuyIn, maxBuyIn
-    var table = new poker.Table(1, 2, 2, 2, 200, 200);
-    table.AddPlayer('levi', 200);
-    table.AddPlayer('june', 200);
+exports.showdown = {
+    setUp: function (callback) {
+        // Params: smallBlind, bigBlind, minPlayers, maxPlayers, minBuyIn, maxBuyIn
+        this.table = new poker.Table(1, 2, 2, 2, 200, 200);
+        this.table.AddPlayer('levi', 200);
+        this.table.AddPlayer('june', 200);
+        this.levi = this.table.players[0];
+        this.june = this.table.players[1];
 
-    // get to "River" round
-    table.players[0].Call();
-    table.players[1].Check();
-    table.players[0].Check();
-    table.players[1].Check();
-    table.players[0].Check();
-    table.players[1].Check();
+        // get to "River" round
+        this.levi.Call();
+        this.june.Check();
+        this.levi.Check();
+        this.june.Check();
+        this.levi.Check();
+        this.june.Check();
 
-    // rig the game to pick a winner
-    table.game.board = ['AC', 'AD', 'AS', 'AH', '2S'];
-    table.game.deck = [];
-    table.players[0].cards = ['7S', '8H'];
-    table.players[1].cards = ['4D', '5C'];
-    table.players[0].Check();
-    table.players[1].Check();
+        callback();
+    },
+    handRank1: function (test) {
+        // rig the game to pick a winner
+        this.table.game.board = ['AC', 'AD', 'AS', 'AH', '2S']; // four of a kind of aces on the board
+        this.table.game.deck = [];
+        this.levi.cards = ['7S', '8H']; // four of a kind of aces with kicker 8
+        this.june.cards = ['4D', '5C']; // four of a kind of aces with kicker 5
+        this.levi.Check();
+        this.june.Check();
 
-    // make sure hands were ranked properly and the right player won
-    test.equal(table.gameWinners.length, 1);
-    test.equal(table.gameWinners[0].playerName, 'levi');
-    test.done();
+        // make sure hands were ranked properly and the right player won
+        test.ok(this.levi.hand.rank > this.june.hand.rank);
+        test.equal(this.table.gameWinners.length, 1);
+        test.equal(this.table.gameWinners[0].playerName, 'levi');
+        test.done();
+    },
+    handRank2: function (test) {
+        // rig the game to pick a winner
+        this.table.game.board = ['2H', '3C', '4D', '9D', 'KC'];
+        this.table.game.deck = [];
+        this.levi.cards = ['AC', '5H']; // 5-high straight
+        this.june.cards = ['5C', '6D']; // 6-high straight
+        this.levi.Check();
+        this.june.Check();
+
+        // make sure hands were ranked properly and the right player won
+        test.ok(this.levi.hand.rank < this.june.hand.rank);
+        test.equal(this.table.gameWinners.length, 1);
+        test.equal(this.table.gameWinners[0].playerName, 'june');
+        test.done();
+    }
 };
 
-exports.testHeadsUp = function(test){
+// a standard game of poker between 2 players
+exports.headsUp = function(test){
     // Params: smallBlind, bigBlind, minPlayers, maxPlayers, minBuyIn, maxBuyIn
     var table = new poker.Table(1, 2, 2, 2, 200, 200);
 
